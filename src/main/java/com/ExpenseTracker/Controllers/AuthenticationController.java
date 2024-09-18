@@ -37,13 +37,15 @@ public class AuthenticationController {
     }*/
 
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody @Valid RegisterUserDto registerUserDto) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterUserDto registerUserDto) {
         String emailExist = registerUserDto.getEmail();
         
         Optional<User> exists = userRepo.findByEmail(emailExist);
         
         if(exists.isPresent()) {
-        	throw new ResponseStatusException(HttpStatus.CONFLICT,"email already in use");
+        	//throw new ResponseStatusException(HttpStatus.CONFLICT,"what email already in use");
+        	return ResponseEntity.status(HttpStatus.CONFLICT)
+        			.body("Yo! Email Exists");
         }
         
     	User registeredUser = authenticationService.signup(registerUserDto);

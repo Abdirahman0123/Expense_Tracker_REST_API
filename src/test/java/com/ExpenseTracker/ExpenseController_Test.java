@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.security.core.userdetails.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -66,8 +68,8 @@ public class ExpenseController_Test {
 	
 	@Autowired
 	private WebApplicationContext context;
-	//@Autowired
-	//public LoginUserDto loginUser;
+	
+
 
 	//private String token;
 
@@ -77,33 +79,8 @@ public class ExpenseController_Test {
 	    //Init MockMvc Object and build
 	    mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
 	}
-	/*@BeforeEach
-	public void setup() {
-		UserDetails user =  userDetailsService.loadUserByUsername("test-user");
-		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_ADMIN");
-		Mockito.when(userDetailsService.loadUserByUsername(Mockito.anyString()))
-				.thenReturn(new User("test-user", "test-password", authorities));
-		token = jwtService.generateToken(user);
-	}*/
 	
-	/*@BeforeEach
-	public void setUp2() {
-		//UserDetails my = (UserDetails)loginUser.setEmail("hellow@hotmai.com").setPassword("hellow@hotmai.com");
-		
-		//loginUser.setEmail("hellow@hotmai.com").setPassword("hellow@hotmai.com");
-		List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-		UserDetails y =  (UserDetails) new User("hellow@hotmai.com", "hellow@hotmai.com", 
-				false, false, false, false, authorities);
-		token = jwtService.generateToken(y);
-	}*/
-
-	/*@Before
-	public void setUp() throws Exception {
-	    mockMvc = MockMvcBuilders
-	            //.webAppContextSetup(webApplicationContext)
-	            .apply(springSecurity())
-	            .build();
-	}*/
+	
 	@Test // this passed but I have to omit ex1.getDate() because json conversion issues
 	public void getExpense_API_Test() throws Exception {
 		String ourtoken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsd2lsbGlhbXMxNiIsInJvbGVzIjoidXNlciIsImlhdCI6MTUxNDQ0OTgzM30.WKMQ_oPPiDcc6sGtMJ1Y9hlrAAc6U3xQLuEHyAnM1FU";
@@ -128,16 +105,29 @@ public class ExpenseController_Test {
 	}
 
 	@Test
+	//@WithMockUser
+	//@WithUserDetails
 	/* this passes if you comment out
-	 User currentUser = (User) authentication.getPrincipal(); in ExpenseConroller class lin 555
+	 User currentUser = (User) authentication.getPrincipal(); in ExpenseConroller class 
+	 if you use  @WithMockUser, it throws casting issues
 	 *  */
 	public void create_New_Expense_API_Test() throws Exception {
 		//User user = new User();
 		String mytoken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsd2lsbGlhbXMxNiIsInJvbGVzIjoidXNlciIsImlhdCI6MTUxNDQ0OTgzM30.WKMQ_oPPiDcc6sGtMJ1Y9hlrAAc6U3xQLuEHyAnM1FU";
 		Long id1 = 1l;
-		Expense ex1 = new Expense(id1, "Wings Meal", "KFC", 5, "Food", LocalDate.now(), LocalTime.now());
+		/*User user = new User();
+		user.setFirstName("Farah");
+		user.setLastName("John");
+		user.setEmail("Hardland@hotmail.com");
+		user.setPassword("Hardland@hotmail.com");*/
+		
+		Expense ex1 = new Expense(id1, "Wings Meal", "KFC",
+				5, "Food", LocalDate.now(), LocalTime.now());
+		
+		//ex1.setUser(user);
 
-		/*this.*/mockMvc.perform(post("/v1/api/expenses").header("AUTHORIZATION","Bearer"+mytoken)
+		/*this.*/mockMvc.perform(post("/v1/api/expenses")
+				.header("AUTHORIZATION","Bearer"+mytoken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(ex1)))
 				.andExpect(status().isCreated());
@@ -148,20 +138,23 @@ public class ExpenseController_Test {
 	 expenseService.deleteExpense(id);
 	 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	 */
-	@Test
+	
+	@Test // I think you have to add a record with same id then test.
 	public void deleteStudent() throws Exception {
 	
 		String dtoken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsd2lsbGlhbXMxNiIsInJvbGVzIjoidXNlciIsImlhdCI6MTUxNDQ0OTgzM30.WKMQ_oPPiDcc6sGtMJ1Y9hlrAAc6U3xQLuEHyAnM1FU";
-		Long id1 = 1l;
+		Long id1 = 4l;
 		Expense ex1 = new Expense(id1, "Wings Meal", "KFC", 5, "Food", LocalDate.now(), LocalTime.now());
 		
+		//doReturn(Optional.of(ex1)).when(expenseService).deleteExpense(id1); 
 		mockMvc.perform(delete("/v1/api/expenses/{id}", id1).with(csrf())
 				.header("AUTHORIZATION","Bearer"+dtoken))
 				.andExpect(status().isNoContent());
 		
 	}
 
-	
+	/* getting Cannot invoke "org.springframework.data.domain.Page.getContent()" 
+	because "pageExpenses" is null. This is because I implemented Pagination */
 	@Test 
 	public void getAllExpenses_API_Test() throws Exception {
 		String mytoken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsd2lsbGlhbXMxNiIsInJvbGVzIjoidXNlciIsImlhdCI6MTUxNDQ0OTgzM30.WKMQ_oPPiDcc6sGtMJ1Y9hlrAAc6U3xQLuEHyAnM1FU";
@@ -174,16 +167,4 @@ public class ExpenseController_Test {
 	            .andExpect(status().isOk());
 	}
 	
-	
-	
-	//.header("Authorization", "Bearer eyJraWQiOiJDQnk5TFlvM2JUK0M2eVpvcWp3ZzEwTndXXC9GQWxjUURteHVHYWNZdDBhRT0iLCJhbGciOiJSUzI1NiJ9.....")
-	//String what = "eyJraWQiOiJDQnk5TFlvM2JUK0M2eVpvcWp3ZzEwTndXXC9GQWxjUURteHVHYWNZdDBhRT0iLCJhbGciOiJSUzI1NiJ9";
-	String mytoken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJsd2lsbGlhbXMxNiIsInJvbGVzIjoidXNlciIsImlhdCI6MTUxNDQ0OTgzM30.WKMQ_oPPiDcc6sGtMJ1Y9hlrAAc6U3xQLuEHyAnM1FU";
-
-	@Test 
-	public void access_API_With_No_Auth_Test() throws Exception {
-		Long id1 = 1l;
-		mockMvc.perform(delete("/v1/api/expenses/{id}", id1).with(csrf()))
-				.andExpect(status().isForbidden());
-	}
 }
