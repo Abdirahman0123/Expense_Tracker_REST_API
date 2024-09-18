@@ -73,74 +73,12 @@ public class ExpenseController {
 	 * return ResponseEntity.ok(expenses); }
 	 */
 
-	// display all the expenses with pagination and filtering
-	/*
-	 * @GetMapping() public ResponseEntity<Map<String, Object>> getAllExpenses(
-	 * 
-	 * @RequestParam(required = false) String category,
-	 * 
-	 * @RequestParam(defaultValue = "0") int page,
-	 * 
-	 * @RequestParam(defaultValue = "3") int size) {
-	 * 
-	 * try { // create arrayList of type Expenss List<Expense> expenses = new
-	 * ArrayList<Expense>();
-	 * 
-	 * // create Pageable object with page and size from RequestParam Pageable
-	 * paging = PageRequest.of(page, size);
-	 * 
-	 * // create Page Page<Expense> pageExpenses = null;
-	 * 
-	 * if (category == null) { //pageExpenses = expenseRepo.findAll(paging);
-	 * pageExpenses = expenseService.getExpenses(paging); }
-	 * 
-	 * else { //pageExpenses = expenseRepo.findByCategory(category, paging);
-	 * pageExpenses = expenseService.findByCategory(category, paging);
-	 * //Page<Expense> pp = expenseService.findByCategory(category, paging); }
-	 * 
-	 * expenses = pageExpenses.getContent();
-	 * 
-	 * if (!expenses.isEmpty()) {
-	 * 
-	 * Map<String, Object> response = new HashMap<>(); response.put("expennses",
-	 * expenses); response.put("currentPage", pageExpenses.getNumber());
-	 * response.put("totalItems", pageExpenses.getTotalElements());
-	 * response.put("totalPages", pageExpenses.getTotalPages());
-	 * 
-	 * return new ResponseEntity<>(response, HttpStatus.OK); // throw new
-	 * ResponseStatusException(HttpStatus.NOT_FOUND, "Record does not // exists"); }
-	 * 
-	 * else { throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-	 * "Category does not exists");
-	 * 
-	 * }
-	 * 
-	 * } catch (Exception e) { throw new
-	 * ResponseStatusException(HttpStatus.NOT_FOUND, "Category does not exists"); }
-	 * 
-	 * }
-	 */
-
-	/*
-	 * this method sorts the result based on the direction if the direction is asc,
-	 * the result is sorted from smallest to largest if the direction is desc, the
-	 * result is sorted from largest to smallest
-	 * 
-	 */
-	private Sort.Direction getSortDirection(String direction) {
-		if (direction.equals("asc")) {
-			return Sort.Direction.ASC;
-		} else if (direction.equals("desc")) {
-			return Sort.Direction.DESC;
-		}
-
-		return Sort.Direction.ASC;
-	}
-	
-	@GetMapping("/date")
-	public ResponseEntity<Map<String, Object>> getDates(@RequestParam(required = false) LocalDate startDate,
-			@RequestParam(required = false) LocalDate endDate, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "3") int size, @RequestParam(defaultValue = "id,desc") String[] sort) {
+	@GetMapping()
+	public ResponseEntity<Map<String, Object>> getAllExpenses(
+			@RequestParam(required = false) String category,
+			@RequestParam(defaultValue = "0") int page, 
+			@RequestParam(defaultValue = "3") int size,
+			@RequestParam(defaultValue = "id,desc") String[] sort) {
 
 		try {
 			List<Order> orders = new ArrayList<>();
@@ -160,57 +98,202 @@ public class ExpenseController {
 
 			List<Expense> expenses = new ArrayList<Expense>();
 
-			// create paging based on page, size and sort using PageRequest;
+			// create paging based on page, size and SortBy;
 			Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
 			Page<Expense> pageExpenses;
 
-			if (startDate == null && endDate == null) {
-				pageExpenses = expenseRepo.findAll(pagingSort);
+			// Page<Expense> pageTuts;
+
+			if (category == null) {
+				//pageExpenses = expenseService.getExpenses(pagingSort);
+				pageExpenses = expenseService.getExpenses(pagingSort);
 			} else {
-				pageExpenses = expenseService.filterByDates(startDate, endDate, pagingSort);
+				pageExpenses = expenseService.findByCategory(category, pagingSort);
+				//pageExpenses = expenseService.getExpenses(pagingSort);
 			}
 
-			// retrieve the List of items in the page
 			expenses = pageExpenses.getContent();
 
-			// if expenses list is empty, return No content
 			if (expenses.isEmpty()) {
 				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 			}
 
 			Map<String, Object> response = new HashMap<>();
 			response.put("expennses", expenses);
-			// getNumber means current page
 			response.put("currentPage", pageExpenses.getNumber());
-			// getTotalElements means get total elements which are stored in the database
 			response.put("totalItems", pageExpenses.getTotalElements());
-			// getTotalPages() means get total number of pages
 			response.put("totalPages", pageExpenses.getTotalPages());
 
 			return new ResponseEntity<>(response, HttpStatus.OK);
 		} catch (Exception e) {
-			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+			//return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+			//return new ResponseEntity<>(null, e.getStackTrace());
+			//throw new ResponseStatusException(HttpStatus.OK, e.getStackTrace());
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occured", e);
+			//throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Actor Not Found", e);
 		}
 
 	}
+	
+	
+	// Retrieve one expense
+	@GetMapping("/{id}")
+	public ResponseEntity<Optional<Expense>> getExpense(@PathVariable Long id) {
 
+		/*if (id == null || id == "") {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid id");
+		}*/
+	
+		Optional<Expense> expense = expenseService.getExpense(id);
+		if (expense.isPresent()) {
+			return ResponseEntity.ok(expense);
+		} else {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Record does not exists");
+		}
+
+	}
+	
+	
+	// add an expense
+	@PostMapping()
+	public ResponseEntity<Expense> addExpense(@RequestBody @Valid Expense expense) {
+		
+		/*User user = new User();*/
+		// trucate milliseconds from the time
+		LocalTime time = expense.getTime();
+		LocalTime truncatedTime = time.truncatedTo(ChronoUnit.SECONDS);
+		expense.setTime(truncatedTime);
+		
+		// get current user
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        User currentUser = (User) authentication.getPrincipal();
+        
+        expense.setUser(currentUser);
+        
+		expenseService.saveExpense(expense);
+		return new ResponseEntity<Expense>(expense, HttpStatus.CREATED);
+
+	}
+
+	// delete an expense
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> deleteExpense(@PathVariable Long id) {
+
+		/*if (id == null || id.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid id");
+		}*/
+
+		Optional<Expense> expense = expenseService.getExpense(id);
+		if (expense.isPresent()) {
+			expenseService.deleteExpense(id);
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		} else {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Record does not exists");
+		}
+			
+			/*expenseService.deleteExpense(id);
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);*/
+		
+	}
+	
+
+
+	/*
+	 * three objects here newExpenseData: new expense data that the user just
+	 * entered oldExpenseData: old data which has been retrieve from the database
+	 * expense: a new objects which is instantiated with oldExpensedat and then
+	 * updated with the newExpenseData. expense is then saved to the database
+	 */
+	@PutMapping("/{id}")
+	public ResponseEntity<Expense> updateExpense(@PathVariable Long id, @RequestBody @Valid Expense newExpenseData) {
+
+		Optional<Expense> oldExpenseData = expenseService.getExpense(id);
+		Expense expense = oldExpenseData.get();
+		if (oldExpenseData.isPresent()) {
+			expense.setItem(newExpenseData.getItem());
+			expense.setShop(newExpenseData.getShop());
+			expense.setPrice(newExpenseData.getPrice());
+			expense.setCategory(newExpenseData.getCategory());
+			expense.setDate(newExpenseData.getDate());
+			expense.setTime(newExpenseData.getTime());
+			return new ResponseEntity<Expense>(expense, HttpStatus.OK);
+		}
+
+		else {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+	}
+
+
+	// partialUpdate
+	/*
+	 * find the expense using id and then pass the returned record to
+	 * applyPatchToExpense. Then, save the expense to the database and return it
+	 * using ResponseEntity with 200 status code
+	 */
+	@PatchMapping("/{id}")
+	public ResponseEntity<Expense> patchUpdate(@PathVariable Long id, @RequestBody @Valid 
+			JsonPatch patch) throws JsonProcessingException, JsonPatchException
+			/*throws JsonProcessingException, JsonPatchException, JsonMappingException*/  {
+		Expense expensePatched = new Expense();
+		
+		//patch.
+		try {
+			
+			Optional<Expense> expense = expenseRepo.findById(id);
+			expensePatched = applyPatchToExpense(patch, expense);
+			expenseService.saveExpense(expensePatched);
+
+			return new ResponseEntity<Expense>(expensePatched, HttpStatus.OK);
+
+		} catch (JsonMappingException ex) {
+			//throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Record Not Found", ex);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+		
+		
+
+	}
+
+	// This method applies json patch
+	/*
+	 * expense instance is converted to JasonNode using convertValue, which is then
+	 * passed to JsonPatch.apply method to apply the patch.
+	 */
+	
+	private Expense applyPatchToExpense(JsonPatch patch, Optional<Expense> expense)
+			throws JsonPatchException, JsonProcessingException {
+		// ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+		JsonNode patched = patch.apply(mapper.convertValue(expense, JsonNode.class));
+		return mapper.treeToValue(patched, Expense.class);
+	}
+	
+	/*
+	 * this method sorts the result based on the direction if the direction is asc,
+	 * the result is sorted from smallest to largest if the direction is desc, the
+	 * result is sorted from largest to smallest
+	 * 
+	 */
+	private Sort.Direction getSortDirection(String direction) {
+		if (direction.equals("asc")) {
+			return Sort.Direction.ASC;
+		} else if (direction.equals("desc")) {
+			return Sort.Direction.DESC;
+		}
+
+		return Sort.Direction.ASC;
+	}
+	
+	// filter expense by one week and retrieve it
 	@GetMapping("/week")
-	public ResponseEntity<?> filterByOneWeek(@RequestParam(required = false) LocalDate today,
-			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size,
+	public ResponseEntity<?> filterByOneWeek(
+			@RequestParam(required = false) LocalDate today,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "3") int size,
 			@RequestParam(defaultValue = "id,desc") String[] sort) {
-
-		// ResponseEntity<Map<String, Object>> response = new ResponseEntity<Map<String,
-		// Object>>(null);
-		/*
-		 * Map<String, Object> response = new HashMap<String, Object>(); LocalDate
-		 * lastWeek = today.minusWeeks(1); response = filter(page, size,lastWeek, today,
-		 * sort);
-		 * 
-		 * return new ResponseEntity(response, HttpStatus.OK);
-		 */
-		// return ResponseEntity.ok(response);
-		// return new ResponseEntity<Map<String, Object>>(HttpStatus.OK);
 
 		try {
 			List<Order> orders = new ArrayList<>();
@@ -225,6 +308,7 @@ public class ExpenseController {
 			}
 
 			else {
+				// sort=[field, direction]
 				orders.add(new Order(getSortDirection(sort[1]), sort[0]));
 			}
 
@@ -325,22 +409,6 @@ public class ExpenseController {
 			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size,
 			@RequestParam(defaultValue = "id,desc") String[] sort) {
 
-		/*
-		 * List<Expense> expenses = new ArrayList<Expense>(); Map<String, Object>
-		 * response = new HashMap<>(); LocalDate lastWeek = today.minusMonths(1);
-		 * expenses = filter(page, size,lastWeek, today, sort);
-		 * 
-		 * response.put("expennses", expenses); // getNumber means current page
-		 * response.put("currentPage", pageExpenses.getNumber()); // getTotalElements
-		 * means get total elements which are stored in the database
-		 * response.put("totalItems", pageExpenses.getTotalElements()); //
-		 * getTotalPages() means get total number of pages response.put("totalPages",
-		 * pageExpenses.getTotalPages());
-		 * 
-		 * 
-		 * 
-		 * return new ResponseEntity(response, HttpStatus.OK);
-		 */
 		try {
 			List<Order> orders = new ArrayList<>();
 
@@ -354,6 +422,7 @@ public class ExpenseController {
 			}
 
 			else {
+				// sort=[field, direction]
 				orders.add(new Order(getSortDirection(sort[1]), sort[0]));
 			}
 
@@ -398,6 +467,7 @@ public class ExpenseController {
 
 	}
 
+	// retrieve expenses from last three months
 	@GetMapping("/threeMonths")
 	public ResponseEntity<Map<String, Object>> filterByThreeMonths(@RequestParam(required = false) LocalDate today,
 			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "3") int size,
@@ -416,6 +486,7 @@ public class ExpenseController {
 			}
 
 			else {
+				// sort=[field, direction]
 				orders.add(new Order(getSortDirection(sort[1]), sort[0]));
 			}
 
@@ -460,254 +531,68 @@ public class ExpenseController {
 
 	}
 
-	@GetMapping()
-	public ResponseEntity<Map<String, Object>> getAllExpenses(
-			@RequestParam(required = false) String category,
-			@RequestParam(defaultValue = "0") int page, 
-			@RequestParam(defaultValue = "3") int size,
-			@RequestParam(defaultValue = "id,desc") String[] sort) {
+	
+	// filter expenses by custom date and return expenses between these dates
+		@GetMapping("/customDate")
+		public ResponseEntity<Map<String, Object>> filterByCustomDate(
+				@RequestParam(required = false) LocalDate startDate,
+				@RequestParam(required = false) LocalDate endDate, 
+				@RequestParam(defaultValue = "0") int page,
+				@RequestParam(defaultValue = "3") int size, 
+				@RequestParam(defaultValue = "id,desc") String[] sort) {
 
-		try {
-			List<Order> orders = new ArrayList<>();
+			try {
+				List<Order> orders = new ArrayList<>();
 
-			// if the sort array contains ",", we will sort the expenses
-			// by 2 fields. Else, we will sort the result by one field
-			if (sort[0].contains(",")) {
-				for (String sortOrder : sort) {
-					String[] _sort = sortOrder.split(",");
-					orders.add(new Order(getSortDirection(_sort[1]), _sort[0]));
+				// if the sort array contains ",", we will sort the expenses
+				// by 2 fields. Else, we will sort the result by one field
+				if (sort[0].contains(",")) {
+					for (String sortOrder : sort) {
+						String[] _sort = sortOrder.split(",");
+						orders.add(new Order(getSortDirection(_sort[1]), _sort[0]));
+					}
 				}
+
+				else {
+					orders.add(new Order(getSortDirection(sort[1]), sort[0]));
+				}
+
+				List<Expense> expenses = new ArrayList<Expense>();
+
+				// create paging based on page, size and sort using PageRequest;
+				Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
+
+				Page<Expense> pageExpenses;
+
+				if (startDate == null && endDate == null) {
+					pageExpenses = expenseRepo.findAll(pagingSort);
+				} else {
+					pageExpenses = expenseService.filterByDates(startDate, endDate, pagingSort);
+				}
+
+				// retrieve the List of items in the page
+				expenses = pageExpenses.getContent();
+
+				// if expenses list is empty, return No content
+				if (expenses.isEmpty()) {
+					return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+				}
+
+				Map<String, Object> response = new HashMap<>();
+				response.put("expennses", expenses);
+				// getNumber means current page
+				response.put("currentPage", pageExpenses.getNumber());
+				// getTotalElements means get total elements which are stored in the database
+				response.put("totalItems", pageExpenses.getTotalElements());
+				// getTotalPages() means get total number of pages
+				response.put("totalPages", pageExpenses.getTotalPages());
+
+				return new ResponseEntity<>(response, HttpStatus.OK);
+			} catch (Exception e) {
+				return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 
-			else {
-				orders.add(new Order(getSortDirection(sort[1]), sort[0]));
-			}
-
-			List<Expense> expenses = new ArrayList<Expense>();
-
-			// create paging based on page, size and SortBy;
-			Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
-
-			Page<Expense> pageExpenses;
-
-			// Page<Expense> pageTuts;
-
-			if (category == null) {
-				//pageExpenses = expenseService.getExpenses(pagingSort);
-				pageExpenses = expenseService.getExpenses(pagingSort);
-			} else {
-				pageExpenses = expenseService.findByCategory(category, pagingSort);
-				//pageExpenses = expenseService.getExpenses(pagingSort);
-			}
-
-			expenses = pageExpenses.getContent();
-
-			if (expenses.isEmpty()) {
-				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-			}
-
-			Map<String, Object> response = new HashMap<>();
-			response.put("expennses", expenses);
-			response.put("currentPage", pageExpenses.getNumber());
-			response.put("totalItems", pageExpenses.getTotalElements());
-			response.put("totalPages", pageExpenses.getTotalPages());
-
-			return new ResponseEntity<>(response, HttpStatus.OK);
-		} catch (Exception e) {
-			//return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-			//return new ResponseEntity<>(null, e.getStackTrace());
-			//throw new ResponseStatusException(HttpStatus.OK, e.getStackTrace());
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occured", e);
-			//throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Actor Not Found", e);
 		}
-
-	}
-
-	@GetMapping("/{id}")
-	public ResponseEntity<Optional<Expense>> getExpense(@PathVariable Long id) {
-
-		/*if (id == null || id == "") {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid id");
-		}*/
-
-    	
-		Optional<Expense> expense = expenseService.getExpense(id);
-		if (expense.isPresent()) {
-			return ResponseEntity.ok(expense);
-		} else {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Record does not exists");
-		}
-
-	}
-
-	@PostMapping()
-	public ResponseEntity<Expense> addExpense(@RequestBody @Valid Expense expense) {
-		
-		User user = new User();
-		// trucate milliseconds from the time
-		LocalTime time = expense.getTime();
-		LocalTime truncatedTime = time.truncatedTo(ChronoUnit.SECONDS);
-		expense.setTime(truncatedTime);
-		
-		// get current user
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        User currentUser = (User) authentication.getPrincipal();
-        
-        expense.setUser(currentUser);
-        
-		expenseService.saveExpense(expense);
-		return new ResponseEntity<Expense>(expense, HttpStatus.CREATED);
-
-	}
-
-	// delete an expense
-	@DeleteMapping("/{id}")
-	public ResponseEntity<HttpStatus> deleteExpense(@PathVariable Long id) {
-
-		/*if (id == null || id.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid id");
-		}*/
-
-		/*Optional<Expense> expense = expenseService.getExpense(id);
-		if (expense.isPresent()) {
-			expenseService.deleteExpense(id);
-			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-		} else {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Record does not exists");
-		}*/
-		
-		
-		
-			expenseService.deleteExpense(id);
-			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-		
-	}
-
-	/*
-	 * three objects here newExpenseData: new expense data that the user just
-	 * entered oldExpenseData: old data which has been retrieve from the database
-	 * expense: a new objects which is instantiated with oldExpensedat and then
-	 * updated with the newExpenseData. expense is then saved to the database
-	 */
-	@PutMapping("/{id}")
-	public ResponseEntity<Expense> updateExpense(@PathVariable Long id, @RequestBody @Valid Expense newExpenseData) {
-
-		Optional<Expense> oldExpenseData = expenseService.getExpense(id);
-		Expense expense = oldExpenseData.get();
-		if (oldExpenseData.isPresent()) {
-			expense.setItem(newExpenseData.getItem());
-			expense.setShop(newExpenseData.getShop());
-			expense.setPrice(newExpenseData.getPrice());
-			expense.setCategory(newExpenseData.getCategory());
-			expense.setDate(newExpenseData.getDate());
-			expense.setTime(newExpenseData.getTime());
-			return new ResponseEntity<Expense>(expense, HttpStatus.OK);
-		}
-
-		else {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
-	}
-
-	// partial update
-	/*
-	 * retreive the expense to updated the database using the id. Apply partial
-	 * update using json patch and then return it to the user
-	 * 
-	 */
-
-	// partialUpdate
-	/*
-	 * find the expense using id and then pass the returned record to
-	 * applyPatchToExpense. Then, save the expense to the database and return it
-	 * using ResponseEntity with 200 status code
-	 */
-	@PatchMapping("/{id}")
-	public ResponseEntity<Expense> patchUpdate(@PathVariable Long id, @RequestBody @Valid 
-			JsonPatch patch) throws JsonProcessingException, JsonPatchException
-			/*throws JsonProcessingException, JsonPatchException, JsonMappingException*/  {
-		Expense expensePatched = new Expense();
-		
-		//patch.
-		try {
-			
-			Optional<Expense> expense = expenseRepo.findById(id);
-			expensePatched = applyPatchToExpense(patch, expense);
-			expenseService.saveExpense(expensePatched);
-
-			return new ResponseEntity<Expense>(expensePatched, HttpStatus.OK);
-
-		} catch (JsonMappingException ex) {
-			//throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Record Not Found", ex);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
-		
-		/*catch (UnrecognizedPropertyException ex) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Record Not Found", ex);
-		}*/
-		
-		/*
-		 Expense expensePatched = new Expense();
-
-		try {
-			
-			Expense expense = expenseRepo.findById(id).get();
-			
-
-			expensePatched = applyPatchToExpense(patch, expense);
-			expenseService.saveExpense(expensePatched);
-
-			return new ResponseEntity<Expense>(expensePatched, HttpStatus.OK);
-
-		} catch (Exception ex) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Expense Not Found", ex);
-		}
-		 */
-
-	}
-
-	// This method applies json patch
-	/*
-	 * expense instance is converted to JasonNode using convertValue, which is then
-	 * passed to JsonPatch.apply method to apply the patch.
-	 */
-	/*
-	 * private Expense applyPatchToExpense(JsonPatch patch, Optional<Expense>
-	 * expense) throws JsonPatchException, JsonProcessingException { ObjectMapper
-	 * mapper = new ObjectMapper();
-	 * mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-	 * JsonNode patched = patch.apply(mapper.convertValue(expense, JsonNode.class));
-	 * return mapper.treeToValue(patched, Expense.class); }
-	 */
-
-	private Expense applyPatchToExpense(JsonPatch patch, Optional<Expense> expense)
-			throws JsonPatchException, JsonProcessingException {
-		// ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-		JsonNode patched = patch.apply(mapper.convertValue(expense, JsonNode.class));
-		return mapper.treeToValue(patched, Expense.class);
-	}
-	/*private Expense applyPatchToExpense(JsonPatch patch, Expense expense)
-			throws JsonPatchException, JsonProcessingException {
-		// ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-		JsonNode patched = patch.apply(mapper.convertValue(expense, JsonNode.class));
-		return mapper.treeToValue(patched, Expense.class);
-	}*/
-
-	// This method shortens error messages for field validations and it displays
-	// only defaultMessage
-	/*@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-		Map<String, String> errors = new HashMap<>();
-		ex.getBindingResult().getAllErrors().forEach((error) -> {
-			String fieldName = ((FieldError) error).getField();
-			String errorMessage = error.getDefaultMessage();
-			errors.put(fieldName, errorMessage);
-		});
-		return ResponseEntity.badRequest().body(errors);
-	}*/
 	
-	
+		
 }
