@@ -45,12 +45,13 @@ public class AuthenticationController {
         if(exists.isPresent()) {
         	//throw new ResponseStatusException(HttpStatus.CONFLICT,"what email already in use");
         	return ResponseEntity.status(HttpStatus.CONFLICT)
-        			.body("Yo! Email Exists");
+        			.body("Email already exists");
         }
         
     	User registeredUser = authenticationService.signup(registerUserDto);
-
-        return ResponseEntity.ok(registeredUser);
+    	
+    	return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
+        //return ResponseEntity.ok(registeredUser);
     }
 
     @PostMapping("/login")
