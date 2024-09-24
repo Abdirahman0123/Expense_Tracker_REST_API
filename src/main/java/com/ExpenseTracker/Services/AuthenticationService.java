@@ -43,11 +43,11 @@ public class AuthenticationService {
 		return userRepository.findByEmail(input.getEmail()).orElseThrow();
 	}
 	
-	public List<User> allUsers() {
+	/*public List<User> allUsers() {
         List<User> users = new ArrayList<>();
 
         userRepository.findAll().forEach(users::add);
 
         return users;
-    }
+    }*/
 }
