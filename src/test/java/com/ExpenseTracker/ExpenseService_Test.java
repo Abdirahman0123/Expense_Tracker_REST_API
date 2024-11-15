@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
+import org.junit.ClassRule;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,7 @@ import org.springframework.data.domain.Sort.Order;
 import com.ExpenseTracker.Models.Expense;
 import com.ExpenseTracker.Repositories.ExpenseRepository;
 import com.ExpenseTracker.Services.ExpenseService;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 /*
  https://ashok-s-nair.medium.com/java-unit-testing-a-spring-boot-service-with-mockito-2362a32fe217
@@ -57,6 +60,14 @@ public class ExpenseService_Test {
 	@InjectMocks
 	public ExpenseService expenseService;
 
+	@ClassRule
+	public static PostgreSQLContainer<MyPostgresqlContainer>
+			postgreSQLContainer = MyPostgresqlContainer.getInstance();
+
+	@BeforeAll
+	public static void beforeAll() {
+		postgreSQLContainer.start();
+	}
 	/*
 	 * This method sets up the objects to be used for testing and represents the
 	 * arrage in the AAA pattern

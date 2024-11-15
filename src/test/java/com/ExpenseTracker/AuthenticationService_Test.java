@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
+import org.junit.ClassRule;
+import org.junit.jupiter.api.BeforeAll;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import com.ExpenseTracker.Models.RegisterUserDto;
 import com.ExpenseTracker.Models.User;
 import com.ExpenseTracker.Repositories.UserRepository;
 import com.ExpenseTracker.Services.AuthenticationService;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -37,6 +40,15 @@ public class AuthenticationService_Test {
 	public RegisterUserDto registerUserDto;
 	@Mock
 	public LoginUserDto loginUserDto;
+
+	@ClassRule
+	public static PostgreSQLContainer<MyPostgresqlContainer>
+			postgreSQLContainer = MyPostgresqlContainer.getInstance();
+
+	@BeforeAll
+	public static void beforeAll() {
+		postgreSQLContainer.start();
+	}
 
 	// I am getting cant invoke PasswordEncoder.ecode because passwordEncoder is
 	// null;

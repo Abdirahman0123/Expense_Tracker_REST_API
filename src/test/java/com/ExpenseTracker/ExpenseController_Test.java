@@ -1,4 +1,6 @@
 package com.ExpenseTracker;
+import org.junit.ClassRule;
+import org.junit.jupiter.api.BeforeAll;
 import org.springframework.web.context.WebApplicationContext;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -38,6 +40,7 @@ import com.ExpenseTracker.Services.JwtService;
 import com.ExpenseTracker.config.JwtAuthenticationFilter;
 import com.ExpenseTracker.config.SecurityConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 //@ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -68,8 +71,15 @@ public class ExpenseController_Test {
 	
 	@Autowired
 	private WebApplicationContext context;
-	
 
+	@ClassRule
+	public static PostgreSQLContainer<MyPostgresqlContainer>
+			postgreSQLContainer = MyPostgresqlContainer.getInstance();
+
+	@BeforeAll
+	public static void beforeAll() {
+		postgreSQLContainer.start();
+	}
 
 	//private String token;
 
