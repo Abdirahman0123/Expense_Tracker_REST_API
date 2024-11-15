@@ -4,6 +4,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.ClassRule;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,13 +16,22 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.ExpenseTracker.Models.LoginUserDto;
 import com.ExpenseTracker.Models.RegisterUserDto;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 public class AuthenticationController_Test {
 
+	@ClassRule
+	public static PostgreSQLContainer<MyPostgresqlContainer> postgreSQLContainer =
+			MyPostgresqlContainer.getInstance();
+
+	// start the container before running tests
+	@BeforeAll
+	public static void beforeAll() {
+		postgreSQLContainer.start();
+	}
 	@Mock
 	public RegisterUserDto registerUserDto;
 	@Mock
