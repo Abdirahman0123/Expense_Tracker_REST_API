@@ -43,7 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 //@ExtendWith(SpringExtension.class)
-@SpringBootTest(classes =  ExpenseTrackerApplicationTests.class)
+@SpringBootTest()
 @AutoConfigureMockMvc(addFilters = false)
 @Import(SecurityConfiguration.class)
 public class ExpenseController_Test {
