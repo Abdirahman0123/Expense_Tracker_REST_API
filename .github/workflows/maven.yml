@@ -49,13 +49,10 @@ jobs:
       if: always()
       with:
         name: Maven Tests
-        path: target/surefire-reports/*.xml
+        path: target/
         reporter: java-junit
         fail-on-error: true
-        permissions:
-          contents: write
-          pull-requests: write
-          repository-projects: write
+
 
 #
     # run tests
