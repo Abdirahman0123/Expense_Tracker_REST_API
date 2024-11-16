@@ -24,7 +24,7 @@ import com.ExpenseTracker.Repositories.UserRepository;
 import com.ExpenseTracker.Services.AuthenticationService;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-@SpringBootTest
+@SpringBootTest(classes =  ExpenseTrackerApplicationTests.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class AuthenticationService_Test {
 
