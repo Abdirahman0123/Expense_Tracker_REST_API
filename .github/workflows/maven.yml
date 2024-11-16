@@ -44,28 +44,22 @@ jobs:
     - name: Test
       run: mvn --batch-mode -Dmaven.test.failure.ignore=true test
 
-    - name: Report
-      uses: dorny/test-reporter@v1
-      if: always()
-      with:
-        name: Maven Tests
-        path: target/
-        reporter: java-junit
-        fail-on-error: true
-
-
-#
-    # run tests
-    #- name: Build with Maven
-     # run: mvn clean verify
+   # - name: Report
+    #  uses: dorny/test-reporter@v1
+    #  if: always()
+     # with:
+    #    name: Maven Tests
+    #    path: target/
+    #    reporter: java-junit
+     #   fail-on-error: true
 
     # generate a report for tests
-    #- name: Test report
-   #   uses: actions/upload-artifact@v3
-    #  if: always()
-    #  with:
-     #   name: SpringBoot Report
-      #  path: target/
+    - name: Test report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: SpringBoot Report
+        path: target/
 
 
 
