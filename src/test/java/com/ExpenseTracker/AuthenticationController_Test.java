@@ -19,7 +19,7 @@ import com.ExpenseTracker.Models.RegisterUserDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-@SpringBootTest(classes =  ExpenseTrackerApplicationTests.class)
+@SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 public class AuthenticationController_Test {
 

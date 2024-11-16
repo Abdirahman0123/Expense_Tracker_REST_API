@@ -42,7 +42,7 @@ jobs:
       if: success() || failure()
       with:
         name: SpringBoot Report
-        path: target/site/serenity/
+        path: target/
 
 
 
