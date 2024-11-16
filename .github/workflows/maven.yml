@@ -59,7 +59,7 @@ jobs:
       if: always()
       with:
         name: SpringBoot Report
-        path: target/
+        path: target/site/serenity/
 
 
 
