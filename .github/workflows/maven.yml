@@ -31,18 +31,27 @@ jobs:
     # package the project
     - name: Build with Maven
       run: mvn -DskipTests=true  package
+    - name: Build with Maven
+      uses: mr-smithers-excellent/docker-build-push@v6
+      with:
+        image: awale123/cid_ExpenseTracker
+        tags: latest
+        registry: docker.io
+        dockerfile: Dockerfile
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
     # run tests
-    - name: Build with Maven
-      run: mvn clean verify
+    #- name: Build with Maven
+     # run: mvn clean verify
 
     # generate a report for tests
-    - name: Test report
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: SpringBoot Report
-        path: target/
+    #- name: Test report
+   #   uses: actions/upload-artifact@v3
+    #  if: always()
+    #  with:
+     #   name: SpringBoot Report
+      #  path: target/
 
 
 
