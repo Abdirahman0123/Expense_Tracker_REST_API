@@ -39,7 +39,7 @@ jobs:
     # generate a report for tests
     - name: Test report
       uses: actions/upload-artifact@v3
-      if: success() || failure()
+      if: always()
       with:
         name: SpringBoot Report
         path: target/
